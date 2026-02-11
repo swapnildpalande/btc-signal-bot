@@ -1,0 +1,44 @@
+name: BTC Weekly Options Signal Bot
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+    - cron: '0 8 * * 5'
+  workflow_dispatch:
+
+jobs:
+  run-signal-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Load saved state
+        uses: actions/cache@v4
+        with:
+          path: |
+            signal_state.json
+            trade_log.json
+          key: signal-state-${{ github.run_number }}
+          restore-keys: |
+            signal-state-
+
+      - name: Run Signal Bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 btc_signal_bot.py
+
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            signal_state.json
+            trade_log.json
+          key: signal-state-${{ github.run_number }}
